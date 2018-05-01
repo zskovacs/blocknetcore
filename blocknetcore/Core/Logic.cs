@@ -17,15 +17,22 @@ namespace blocknetcore.Core
             blockChain.Push(GenerateGenesisBlock());
         }
 
-        private Block GenerateGenesisBlock()
-        {
-            return new Block(0, "0", 1525160403, "genesis block", "7f888024d4a182d61074fcccb7c69af401acfbfff328df8633cec87f669c1e07");
-        }
-
         public void AddBlock(Block block)
         {
             if (IsValidBlock(block, GetLatestBlock()))
                 blockChain.Push(block);
+        }
+        public List<Block> GetBlockChain()
+        {
+            return blockChain.ToList();
+        }
+        public Block GenerateNextBlock(string data)
+        {
+            var previousBlock = GetLatestBlock();
+            var nextIndex = previousBlock.Index + 1;
+            var nextTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var nextHash = CalcualteHash(nextIndex, previousBlock.Hash, nextTimestamp, data);
+            return new Block(nextIndex, previousBlock.Hash, nextTimestamp, data, nextHash);
         }
 
         private bool IsValidBlock(Block newBlock, Block prevBlock)
@@ -48,27 +55,15 @@ namespace blocknetcore.Core
 
             return true;
         }
-
-        public Block GenerateNextBlock(string data)
-        {
-            var previousBlock = GetLatestBlock();
-            var nextIndex = previousBlock.Index + 1;
-            var nextTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var nextHash = CalcualteHash(nextIndex, previousBlock.Hash, nextTimestamp, data);
-            return new Block(nextIndex, previousBlock.Hash, nextTimestamp, data, nextHash);
-        }
-
         private Block GetLatestBlock()
         {
             return blockChain.Peek();
         }
-
-        public string CalcualteHash(Block block)
+        private string CalcualteHash(Block block)
         {
             return CalcualteHash(block.Index, block.PreviousHash, block.Timestamp, block.Data);
         }
-
-        public string CalcualteHash(int index, string previousHash, long timestamp, string data)
+        private string CalcualteHash(int index, string previousHash, long timestamp, string data)
         {
             var bytes = Encoding.UTF8.GetBytes($"{index}{previousHash}{timestamp}{data}");
             var hashstring = new SHA256Managed();
@@ -82,10 +77,9 @@ namespace blocknetcore.Core
 
             return hashString.ToString();
         }
-
-        public List<Block> GetBlockChain()
+        private Block GenerateGenesisBlock()
         {
-            return blockChain.ToList();
+            return new Block(0, "0", 1525160403, "genesis block", "7f888024d4a182d61074fcccb7c69af401acfbfff328df8633cec87f669c1e07");
         }
     }
 }
